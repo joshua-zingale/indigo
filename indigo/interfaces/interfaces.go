@@ -16,7 +16,7 @@ type IndigoReader interface {
 }
 
 type IndigoEvaluator interface {
-	Eval(any) any
+	Eval(any, NameSpace) (any, error)
 }
 
 type IndigoFunction interface {
@@ -30,7 +30,7 @@ type Symbol string
 type NameSpace interface {
 
 	// Create a Child NameSpace
-	NewChild() *NameSpace
+	NewChild() NameSpace
 
 	// Gets the value associated with a Symbol from the current namespace.
 	// If the Symbol is undefined in this namespace, its ancestry is recursively

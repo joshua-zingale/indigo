@@ -12,7 +12,13 @@ func invoke(funcToCall any, args []any) (any, error) {
 	if len(values) != 2 {
 		panic("all invoked functions must return two values, the primary value and a (nil-able) error")
 	}
-	return values[0].Interface(), values[1].Interface().(error)
+	var errorVal error = nil
+	if secondReturnValue, ok := values[1].Interface().(error); ok {
+		errorVal = secondReturnValue
+	} else if values[1].Interface() != nil {
+		panic("all invoked functions must return two values, the primary value and a (nil-able) error")
+	}
+	return values[0].Interface(), errorVal
 }
 
 func getFuncParameters(function any) []reflect.Type {
@@ -20,7 +26,7 @@ func getFuncParameters(function any) []reflect.Type {
 	numParameters := functionType.NumIn()
 	parameterTypes := make([]reflect.Type, numParameters)
 	for i := range parameterTypes {
-		parameterTypes = append(parameterTypes, functionType.In(i))
+		parameterTypes[i] = functionType.In(i)
 	}
 
 	return parameterTypes

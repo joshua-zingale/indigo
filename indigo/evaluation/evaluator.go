@@ -5,7 +5,6 @@ import (
 	"reflect"
 
 	"github.com/joshua-zingale/indigo/indigo/interfaces"
-	"github.com/joshua-zingale/indigo/indigo/internal"
 )
 
 type goFunction struct {
@@ -34,15 +33,17 @@ func (gf *goFunction) Call(args ...any) (any, error) {
 	return invoke(gf.function, args)
 }
 
-type StandardEvaluator struct {
-	namespace internal.NameSpace
+type StandardEvaluator struct{}
+
+func NewStandardEvaluator() interfaces.IndigoEvaluator {
+	return &StandardEvaluator{}
 }
 
-func (se *StandardEvaluator) Eval(expression any) (any, error) {
-	return se.evalInNamespace(expression, se.namespace)
+func (se *StandardEvaluator) Eval(expression any, namespace interfaces.NameSpace) (any, error) {
+	return evalInNamespace(expression, namespace)
 }
 
-func (se *StandardEvaluator) evalInNamespace(expression any, namespace internal.NameSpace) (any, error) {
+func evalInNamespace(expression any, namespace interfaces.NameSpace) (any, error) {
 	switch typedExpression := expression.(type) {
 	case interfaces.Symbol:
 		if value, ok := namespace.Get(typedExpression); ok {
@@ -50,23 +51,73 @@ func (se *StandardEvaluator) evalInNamespace(expression any, namespace internal.
 		}
 		return nil, interfaces.UndefinedSymbolError(typedExpression)
 	case interfaces.Cons:
-		if _, ok := typedExpression.Car().(interfaces.Symbol); ok {
+		if list, err := consToSlice(typedExpression); err == nil {
+			return evalList(list, namespace)
 		}
+		return typedExpression, nil
+	default:
+		return typedExpression, nil
 	}
-	panic("unreachable!")
 }
 
-func evalList(head interfaces.Cons, namespace interfaces.NameSpace) (any, error) {
-	symbol, ok := head.Car().(interfaces.Symbol)
-	if !ok {
-		return nil, fmt.Errorf("cannot evaluate %v as a function: must be a symbol", head.Car())
+func evalList(list []any, namespace interfaces.NameSpace) (any, error) {
+	if len(list) == 0 {
+		return nil, fmt.Errorf("cannot evaluate empty list")
 	}
-	function, ok := namespace.Get(symbol)
+	symbol, ok := list[0].(interfaces.Symbol)
+	if !ok {
+		return nil, fmt.Errorf("cannot use %v as a function: must be a symbol", list[0])
+	}
+
+	value, ok := namespace.Get(symbol)
 	if !ok {
 		return nil, interfaces.UndefinedSymbolError(symbol)
 	}
-	if !isGoFunc(function) {
-		return nil, interfaces.ExpectedButFoundTypeError("function", function)
+
+	function, ok := value.(interfaces.IndigoFunction)
+	if !ok {
+		return nil, interfaces.ExpectedButFoundTypeError("function", value)
 	}
-	panic("TODO")
+
+	var evaluatedArgList []any
+	for _, element := range list[1:] {
+		evaluatedElement, err := evalInNamespace(element, namespace)
+		if err != nil {
+			return nil, err
+		}
+		evaluatedArgList = append(evaluatedArgList, evaluatedElement)
+	}
+
+	expressionValue, err := function.Call(evaluatedArgList...)
+	if err != nil {
+		return nil, err
+	}
+
+	return expressionValue, nil
+}
+
+func consToSlice(maybeCons any) ([]any, error) {
+	var result []any
+
+	c, ok := maybeCons.(interfaces.Cons)
+	if !ok {
+		return nil, fmt.Errorf("invalid list")
+	}
+
+	for !c.Empty() {
+		result = append(result, c.Car())
+
+		next := c.Cdr()
+		if next == nil {
+			break
+		}
+
+		nextCons, ok := next.(interfaces.Cons)
+		if !ok {
+			return nil, fmt.Errorf("invalid list: must be nil terminated")
+		}
+		c = nextCons
+	}
+
+	return result, nil
 }

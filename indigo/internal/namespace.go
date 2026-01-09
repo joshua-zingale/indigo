@@ -7,14 +7,14 @@ type NameSpace struct {
 	namespace map[interfaces.Symbol]any
 }
 
-func NewNameSpace() *NameSpace {
+func NewNameSpace() interfaces.NameSpace {
 	return &NameSpace{
 		parent:    nil,
 		namespace: map[interfaces.Symbol]any{},
 	}
 }
 
-func (ns *NameSpace) NewChild() *NameSpace {
+func (ns *NameSpace) NewChild() interfaces.NameSpace {
 	return &NameSpace{parent: ns, namespace: make(map[interfaces.Symbol]any)}
 }
 
