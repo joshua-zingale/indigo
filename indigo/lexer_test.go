@@ -1,6 +1,9 @@
 package indigo
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
 
 func TestLexerPositions(t *testing.T) {
 	lexer := IndigoLexer("( 12\n\n 123")
@@ -38,4 +41,34 @@ func TestLexerPositions(t *testing.T) {
 	if token.position != should {
 		t.Errorf("expected %v but found %v", should, token.position)
 	}
+}
+
+func TestLexerKinds(t *testing.T) {
+	lexer := IndigoLexer("( 12\n\n 123")
+	var lexerKinds []LexemeKind
+	for {
+		token, err := lexer.Next()
+		if err != nil {
+			if err == EOF {
+				break
+			}
+			t.Errorf("%s", err)
+		}
+		lexerKinds = append(lexerKinds, token.kind)
+	}
+
+	expectedKinds := []LexemeKind{LParen, Integer, Integer}
+
+	doesNotMatchError := fmt.Errorf("found   : %v\nexpected: %v", lexerKinds, expectedKinds)
+
+	if len(lexerKinds) != len(expectedKinds) {
+		t.Error(doesNotMatchError)
+	}
+
+	for i := range lexerKinds {
+		if lexerKinds[i] != expectedKinds[i] {
+			t.Error(doesNotMatchError)
+		}
+	}
+
 }

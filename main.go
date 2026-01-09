@@ -1,12 +1,12 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/joshua-zingale/indigo/indigo"
+)
 
 func main() {
-	var a int
-	b := &a
-
-	*b = 3
-
-	fmt.Println(a)
+	v, _ := indigo.Read("(+ 2 (* 3 1))")
+	fmt.Printf("%v", v)
 }

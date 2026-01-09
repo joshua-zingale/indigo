@@ -16,18 +16,17 @@ type DocumentPosition struct {
 }
 
 func (dp *DocumentPosition) advanceRune(r rune) {
-	dp.Offset = utf8.RuneLen(r)
+	dp.Offset += utf8.RuneLen(r)
 	dp.Char += 1
-	dp.Line += 1
 	if r == '\n' {
 		dp.Char = 0
-		dp.Line = 0
+		dp.Line += 1
 	}
 }
 
 func (dp *DocumentPosition) advanceString(s string) {
-	for r := range []rune(s) {
-		dp.advanceRune(rune(r))
+	for _, r := range s {
+		dp.advanceRune(r)
 	}
 }
 
@@ -44,12 +43,22 @@ type Lexer[T any] interface {
 
 type RegexLexer[T any] struct {
 	position DocumentPosition
-	rules    map[*regexp.Regexp]T
+	rules    []compiledLexerRule[T]
 	skipRule *regexp.Regexp
 	source   string
 }
 
-func MustNewLexerFactory[T any](rules map[string]T, skipRule string) func(string) Lexer[T] {
+type LexerRule[T any] struct {
+	Pattern string
+	Kind    T
+}
+
+type compiledLexerRule[T any] struct {
+	Pattern *regexp.Regexp
+	Kind    T
+}
+
+func MustNewLexerFactory[T any](rules []LexerRule[T], skipRule string) func(string) Lexer[T] {
 	factory, err := NewLexerFactory(rules, skipRule)
 	if err != nil {
 		panic(err)
@@ -57,20 +66,20 @@ func MustNewLexerFactory[T any](rules map[string]T, skipRule string) func(string
 	return factory
 }
 
-func NewLexerFactory[T any](rules map[string]T, skipRule string) (func(string) Lexer[T], error) {
-	regexRules := make(map[*regexp.Regexp]T)
-	for regularExpression, kind := range rules {
-		compiledRegularExpression, err := regexp.Compile("^" + regularExpression)
+func NewLexerFactory[T any](rules []LexerRule[T], skipRule string) (func(string) Lexer[T], error) {
+	var regexRules []compiledLexerRule[T]
+	for _, rule := range rules {
+		compiledRegularExpression, err := regexp.Compile("^" + rule.Pattern)
 		if numSubExpressions := compiledRegularExpression.NumSubexp(); numSubExpressions != 0 {
 			return nil, fmt.Errorf("regular expression must have 0 capture groups but %d were found", numSubExpressions)
 		}
 		if err != nil {
 			return nil, err
 		}
-		regexRules[compiledRegularExpression] = kind
+		regexRules = append(regexRules, compiledLexerRule[T]{compiledRegularExpression, rule.Kind})
 	}
 
-	compiledSkipRule, err := regexp.Compile("^")
+	compiledSkipRule, err := regexp.Compile("^" + skipRule)
 	if err != nil {
 		return nil, err
 	}
@@ -101,8 +110,8 @@ func (rl *RegexLexer[T]) Next() (*Token[T], error) {
 		return nil, EOF
 	}
 
-	for rule, kind := range rl.rules {
-		lexeme := rule.FindString(rl.currSourceSlice())
+	for _, rule := range rl.rules {
+		lexeme := rule.Pattern.FindString(rl.currSourceSlice())
 
 		if lexeme == "" {
 			continue
@@ -114,7 +123,7 @@ func (rl *RegexLexer[T]) Next() (*Token[T], error) {
 		return &Token[T]{
 			lexeme:   lexeme,
 			position: start_of_lexeme,
-			kind:     kind,
+			kind:     rule.Kind,
 		}, nil
 	}
 

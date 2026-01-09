@@ -5,8 +5,8 @@ type Cons struct {
 	cdr interface{}
 }
 
-func NewCons(car interface{}, cdr interface{}) Cons {
-	return Cons{car: car, cdr: cdr}
+func NewCons(car interface{}, cdr interface{}) *Cons {
+	return &Cons{car: car, cdr: cdr}
 }
 
 func EmptyCons() Cons {

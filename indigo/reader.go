@@ -6,7 +6,7 @@ import (
 )
 
 type IndigoReader interface {
-	// Returns the next-parsed list
+	// Returns the next-parsed object
 	Read() (any, error)
 }
 
@@ -21,20 +21,22 @@ type LexemeKind int
 const (
 	LParen LexemeKind = iota
 	RParen
+	Float
 	Integer
+	Name
 )
 
-type ProductionKind int
+func Read(source string) (any, error) {
+	lexer := NewStandardReader(source)
+	return lexer.Read()
+}
 
-const (
-	ProdInteger ProductionKind = iota
-	ProdList
-)
-
-var IndigoLexer = MustNewLexerFactory(map[string]LexemeKind{
-	`\(`:  LParen,
-	`\)`:  RParen,
-	`\d+`: Integer,
+var IndigoLexer = MustNewLexerFactory([]LexerRule[LexemeKind]{
+	{`\(`, LParen},
+	{`\)`, RParen},
+	{`\d*\.\d+`, Float},
+	{`\d+`, Integer},
+	{`[^\d\s\(\)][^\(\)\s]*`, Name},
 }, `\s+`)
 
 func NewStandardReader(source string) IndigoReader {
@@ -62,22 +64,45 @@ func (sr *StandardReader) Read() (any, error) {
 	}
 
 	switch sr.curr.kind {
+	case Float:
+		return sr.readFloat()
 	case Integer:
-		integer, err := strconv.ParseInt(sr.curr.lexeme, 10, 64)
-		if err != nil {
-			return nil, err
-		}
-		sr.Next()
-		return integer, nil
+		return sr.readInteger()
 	case LParen:
 		cons, err := sr.readList()
 		if err != nil {
 			return nil, fmt.Errorf("invalid list: %e", err)
 		}
 		return cons, nil
+	case Name:
+		return sr.readSymbol(), nil
 	}
 
 	panic("unreachable")
+}
+
+func (sr *StandardReader) readSymbol() Symbol {
+	symbol := Symbol(sr.curr.lexeme)
+	sr.Next()
+	return symbol
+}
+
+func (sr *StandardReader) readFloat() (float64, error) {
+	float, err := strconv.ParseFloat(sr.curr.lexeme, 64)
+	if err != nil {
+		return 0, err
+	}
+	sr.Next()
+	return float, nil
+}
+
+func (sr *StandardReader) readInteger() (int, error) {
+	integer, err := strconv.ParseInt(sr.curr.lexeme, 10, 32)
+	if err != nil {
+		return 0, err
+	}
+	sr.Next()
+	return int(integer), nil
 }
 
 func (sr *StandardReader) readList() (*Cons, error) {
@@ -86,7 +111,18 @@ func (sr *StandardReader) readList() (*Cons, error) {
 		panic(err)
 	}
 
-	var head *Cons = nil
+	if sr.curr.kind == RParen {
+		return nil, nil
+	}
+
+	value, err := sr.Read()
+	if err == EOF {
+		return nil, fmt.Errorf("unbalanced parentheses: missing right parenthesis")
+	} else if err != nil {
+		return nil, err
+	}
+
+	var head *Cons = NewCons(value, nil)
 
 	tail := head
 
@@ -99,9 +135,12 @@ func (sr *StandardReader) readList() (*Cons, error) {
 			return nil, err
 		}
 
-		*tail = NewCons(value, nil)
-		tail = tail.cdr.(*Cons)
+		newCons := NewCons(value, nil)
+		tail.cdr = newCons
+		tail = newCons
 	}
+
+	// sr.Next()
 
 	return head, nil
 }
