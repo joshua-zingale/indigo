@@ -8,5 +8,6 @@ import (
 
 func main() {
 	v, _ := indigo.Read("(+ 2 (* 3 1))")
+
 	fmt.Printf("%v", v)
 }

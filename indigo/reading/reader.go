@@ -1,14 +1,11 @@
-package indigo
+package reading
 
 import (
 	"fmt"
 	"strconv"
-)
 
-type IndigoReader interface {
-	// Returns the next-parsed object
-	Read() (any, error)
-}
+	"github.com/joshua-zingale/indigo/indigo/interfaces"
+)
 
 type StandardReader struct {
 	lexer   Lexer[LexemeKind]
@@ -26,11 +23,6 @@ const (
 	Name
 )
 
-func Read(source string) (any, error) {
-	lexer := NewStandardReader(source)
-	return lexer.Read()
-}
-
 var IndigoLexer = MustNewLexerFactory([]LexerRule[LexemeKind]{
 	{`\(`, LParen},
 	{`\)`, RParen},
@@ -39,7 +31,7 @@ var IndigoLexer = MustNewLexerFactory([]LexerRule[LexemeKind]{
 	{`[^\d\s\(\)][^\(\)\s]*`, Name},
 }, `\s+`)
 
-func NewStandardReader(source string) IndigoReader {
+func NewStandardReader(source string) interfaces.IndigoReader {
 
 	lexer := IndigoLexer(source)
 
@@ -81,8 +73,8 @@ func (sr *StandardReader) Read() (any, error) {
 	panic("unreachable")
 }
 
-func (sr *StandardReader) readSymbol() Symbol {
-	symbol := Symbol(sr.curr.lexeme)
+func (sr *StandardReader) readSymbol() interfaces.Symbol {
+	symbol := interfaces.Symbol(sr.curr.lexeme)
 	sr.Next()
 	return symbol
 }
@@ -105,26 +97,13 @@ func (sr *StandardReader) readInteger() (int, error) {
 	return int(integer), nil
 }
 
-func (sr *StandardReader) readList() (*Cons, error) {
+func (sr *StandardReader) readList() (interfaces.Cons, error) {
 	err := sr.Next()
 	if err != nil {
 		panic(err)
 	}
 
-	if sr.curr.kind == RParen {
-		return nil, nil
-	}
-
-	value, err := sr.Read()
-	if err == EOF {
-		return nil, fmt.Errorf("unbalanced parentheses: missing right parenthesis")
-	} else if err != nil {
-		return nil, err
-	}
-
-	var head *Cons = NewCons(value, nil)
-
-	tail := head
+	var elements List
 
 	for sr.curr.kind != RParen {
 		value, err := sr.Read()
@@ -135,12 +114,8 @@ func (sr *StandardReader) readList() (*Cons, error) {
 			return nil, err
 		}
 
-		newCons := NewCons(value, nil)
-		tail.cdr = newCons
-		tail = newCons
+		elements = append(elements, value)
 	}
 
-	// sr.Next()
-
-	return head, nil
+	return elements, nil
 }
