@@ -22,11 +22,3 @@ func (c *Cons) Empty() bool {
 func NewCons(car any, cdr any) interfaces.Cons {
 	return &Cons{car: car, cdr: cdr}
 }
-
-func NewList(elements ...any) interfaces.Cons {
-	var head *Cons = nil
-	for i := len(elements) - 1; i >= 0; i -= 1 {
-		head = &Cons{car: elements[i], cdr: head}
-	}
-	return head
-}

@@ -1,6 +1,8 @@
 package indigo
 
 import (
+	"fmt"
+
 	"github.com/joshua-zingale/indigo/indigo/interfaces"
 	"github.com/joshua-zingale/indigo/indigo/internal"
 	"github.com/joshua-zingale/indigo/indigo/standard/evaluation"
@@ -32,14 +34,23 @@ func (ii *IndigoInterpreter) Eval(object any) (any, error) {
 
 func Read(source string) (any, error) {
 	lexer := reading.NewStandardReader(source)
-	return lexer.Read()
+	readObject, err := lexer.Read()
+	if err != nil {
+		return nil, err
+	}
+
+	if _, err := lexer.Read(); err == nil {
+		return nil, fmt.Errorf("multiple objects read")
+	}
+
+	return readObject, nil
 }
 
 func NewCons(car any, cdr any) interfaces.Cons {
 	return internal.NewCons(car, cdr)
 }
 
-func NewList(elements ...any) interfaces.Cons {
+func NewList(elements ...any) interfaces.List {
 	return internal.NewList(elements...)
 }
 

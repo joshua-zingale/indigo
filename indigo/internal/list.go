@@ -1,5 +1,7 @@
 package internal
 
+import "github.com/joshua-zingale/indigo/indigo/interfaces"
+
 type List []any
 
 func (l List) Car() any {
@@ -15,3 +17,7 @@ func (l List) Empty() bool {
 }
 
 func (l List) IsList() {}
+
+func NewList(elements ...any) interfaces.List {
+	return List(elements)
+}
