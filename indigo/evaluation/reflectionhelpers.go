@@ -1,6 +1,8 @@
 package evaluation
 
-import "reflect"
+import (
+	"reflect"
+)
 
 func invoke(funcToCall any, args []any) (any, error) {
 	inputs := make([]reflect.Value, len(args))
@@ -21,7 +23,7 @@ func invoke(funcToCall any, args []any) (any, error) {
 	return values[0].Interface(), errorVal
 }
 
-func getFuncParameters(function any) []reflect.Type {
+func getFuncParameterTypes(function any) []reflect.Type {
 	functionType := reflect.TypeOf(function)
 	numParameters := functionType.NumIn()
 	parameterTypes := make([]reflect.Type, numParameters)
@@ -30,16 +32,4 @@ func getFuncParameters(function any) []reflect.Type {
 	}
 
 	return parameterTypes
-}
-
-func valuesToTypes(values []any) []reflect.Type {
-	types := make([]reflect.Type, len(values))
-	for _, v := range values {
-		types = append(types, reflect.TypeOf(v))
-	}
-	return types
-}
-
-func isGoFunc(v any) bool {
-	return reflect.TypeOf(v).Kind() == reflect.Func
 }

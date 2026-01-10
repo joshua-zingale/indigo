@@ -26,9 +26,9 @@ const (
 var IndigoLexer = MustNewLexerFactory([]LexerRule[LexemeKind]{
 	{`\(`, LParen},
 	{`\)`, RParen},
-	{`\d*\.\d+`, Float},
-	{`\d+`, Integer},
-	{`[^\d\s\(\)][^\(\)\s]*`, Name},
+	{`-?\d*\.\d+`, Float},
+	{`-?\d+`, Integer},
+	{`[^\d\s\(\)\-][^\(\)\s]*`, Name},
 }, `\s+`)
 
 func NewStandardReader(source string) interfaces.IndigoReader {

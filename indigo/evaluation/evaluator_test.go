@@ -3,29 +3,48 @@ package evaluation
 import (
 	"testing"
 
-	reading "github.com/joshua-zingale/indigo/indigo/Reading"
 	"github.com/joshua-zingale/indigo/indigo/interfaces"
 	"github.com/joshua-zingale/indigo/indigo/internal"
+	"github.com/joshua-zingale/indigo/indigo/reading"
 )
 
 func TestStandardEvaluator(t *testing.T) {
 	pairs := map[string]any{
-		"123":           123,
-		"9.5":           9.5,
-		"(+ 2 3)":       5,
-		"Bob":           "WOW!",
-		"(+ 1 (* 3 2))": 7,
+		"123":                    123,
+		"9.5":                    9.5,
+		"(+ 2 3)":                5,
+		"Bob":                    "WOW!",
+		"(if true -3 2)":         -3,
+		"(if false -3 2)":        2,
+		"(if false undefined 2)": 2,
 	}
 
 	evaluator := NewStandardEvaluator()
 	namespace := internal.NewNameSpace()
-	namespace.Set(interfaces.Symbol("+"), NewIndigoFunctionFromGoFunction(func(a int, b int) (int, error) {
+	namespace.Set(interfaces.Symbol("+"), NewTypeCheckedIndigoFunctionFromGo(func(a int, b int) (int, error) {
 		return a + b, nil
 	}))
-	namespace.Set(interfaces.Symbol("*"), NewIndigoFunctionFromGoFunction(func(a int, b int) (int, error) {
+	namespace.Set(interfaces.Symbol("*"), NewTypeCheckedIndigoFunctionFromGo(func(a int, b int) (int, error) {
 		return a * b, nil
 	}))
+	namespace.Set(interfaces.Symbol("if"), NewIndigoFunctionFromGo(func(evaluator interfaces.IndigoEvaluator, namespace interfaces.NameSpace, args []any) (any, error) {
+		if len(args) != 3 {
+			panic("invalid num args for if")
+		}
+		condition, err := evaluator.Eval(args[0], namespace)
+		if err != nil {
+			panic(err)
+		}
+		veracity := condition.(bool)
+		if veracity {
+			return evaluator.Eval(args[1], namespace)
+		} else {
+			return evaluator.Eval(args[2], namespace)
+		}
+	}))
 	namespace.Set(interfaces.Symbol("Bob"), "WOW!")
+	namespace.Set(interfaces.Symbol("true"), true)
+	namespace.Set(interfaces.Symbol("false"), false)
 
 	for source, expected := range pairs {
 

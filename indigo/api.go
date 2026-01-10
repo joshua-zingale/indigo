@@ -22,3 +22,7 @@ func NewList(elements ...any) interfaces.Cons {
 func Symbol(symbol string) interfaces.Symbol {
 	return interfaces.Symbol(symbol)
 }
+
+func NewNameSpace() interfaces.NameSpace {
+	return internal.NewNameSpace()
+}

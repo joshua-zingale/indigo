@@ -1,9 +1,5 @@
 package interfaces
 
-import (
-	"reflect"
-)
-
 type Cons interface {
 	Car() any
 	Cdr() any
@@ -21,8 +17,7 @@ type IndigoEvaluator interface {
 
 type IndigoFunction interface {
 	// Calls the function with the passed in arguments.
-	Call(args ...any) (any, error)
-	ParameterTypes() []reflect.Type
+	Call(IndigoEvaluator, NameSpace, []any) (any, error)
 }
 
 type Symbol string
