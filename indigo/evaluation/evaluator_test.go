@@ -12,7 +12,8 @@ func TestStandardEvaluator(t *testing.T) {
 	pairs := map[string]any{
 		"123":                    123,
 		"9.5":                    9.5,
-		"(+ 2 3)":                5,
+		"(+ 2 3)":                5.0,
+		"(+ 2.5 3)":              5.5,
 		"Bob":                    "WOW!",
 		"(if true -3 2)":         -3,
 		"(if false -3 2)":        2,
@@ -21,25 +22,26 @@ func TestStandardEvaluator(t *testing.T) {
 
 	evaluator := NewStandardEvaluator()
 	namespace := internal.NewNameSpace()
-	namespace.Set(interfaces.Symbol("+"), NewTypeCheckedIndigoFunctionFromGo(func(a int, b int) (int, error) {
+	namespace.Set(interfaces.Symbol("+"), NewTypeCheckedIndigoFunctionFromGo(func(a float64, b float64) (float64, error) {
 		return a + b, nil
 	}))
-	namespace.Set(interfaces.Symbol("*"), NewTypeCheckedIndigoFunctionFromGo(func(a int, b int) (int, error) {
+	namespace.Set(interfaces.Symbol("*"), NewTypeCheckedIndigoFunctionFromGo(func(a float64, b float64) (float64, error) {
 		return a * b, nil
 	}))
-	namespace.Set(interfaces.Symbol("if"), NewIndigoFunctionFromGo(func(evaluator interfaces.IndigoEvaluator, namespace interfaces.NameSpace, args []any) (any, error) {
-		if len(args) != 3 {
+	namespace.Set(interfaces.Symbol("if"), NewIndigoFunctionFromGo(func(evaluator interfaces.IndigoEvaluator, namespace interfaces.NameSpace, args interfaces.List) (any, error) {
+		argSlice := internal.ListToSlice(args)
+		if len(argSlice) != 3 {
 			panic("invalid num args for if")
 		}
-		condition, err := evaluator.Eval(args[0], namespace)
+		condition, err := evaluator.Eval(argSlice[0], namespace)
 		if err != nil {
 			panic(err)
 		}
 		veracity := condition.(bool)
 		if veracity {
-			return evaluator.Eval(args[1], namespace)
+			return evaluator.Eval(argSlice[1], namespace)
 		} else {
-			return evaluator.Eval(args[2], namespace)
+			return evaluator.Eval(argSlice[2], namespace)
 		}
 	}))
 	namespace.Set(interfaces.Symbol("Bob"), "WOW!")

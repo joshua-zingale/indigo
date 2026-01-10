@@ -24,7 +24,7 @@ func (se *StandardEvaluator) evalInNamespace(expression any, namespace interface
 		}
 		return nil, interfaces.UndefinedSymbolError(typedExpression)
 	case interfaces.Cons:
-		if list, err := consToSlice(typedExpression); err == nil {
+		if list, ok := typedExpression.(interfaces.List); ok {
 			return se.evalList(list, namespace)
 		}
 		return typedExpression, nil
@@ -33,13 +33,13 @@ func (se *StandardEvaluator) evalInNamespace(expression any, namespace interface
 	}
 }
 
-func (se *StandardEvaluator) evalList(list []any, namespace interfaces.NameSpace) (any, error) {
-	if len(list) == 0 {
+func (se *StandardEvaluator) evalList(list interfaces.List, namespace interfaces.NameSpace) (any, error) {
+	if list.Empty() {
 		return nil, fmt.Errorf("cannot evaluate empty list")
 	}
-	symbol, ok := list[0].(interfaces.Symbol)
+	symbol, ok := list.Car().(interfaces.Symbol)
 	if !ok {
-		return nil, fmt.Errorf("cannot use %v as a function: must be a symbol", list[0])
+		return nil, fmt.Errorf("cannot use %v as a function: must be a symbol", list.Car())
 	}
 
 	value, ok := namespace.Get(symbol)
@@ -52,36 +52,10 @@ func (se *StandardEvaluator) evalList(list []any, namespace interfaces.NameSpace
 		return nil, interfaces.ExpectedButFoundTypeError("function", value)
 	}
 
-	expressionValue, err := function.Call(se, namespace, list[1:])
+	expressionValue, err := function.Call(se, namespace, list.Cdr().(interfaces.List))
 	if err != nil {
 		return nil, err
 	}
 
 	return expressionValue, nil
-}
-
-func consToSlice(maybeCons any) ([]any, error) {
-	var result []any
-
-	c, ok := maybeCons.(interfaces.Cons)
-	if !ok {
-		return nil, fmt.Errorf("invalid list")
-	}
-
-	for !c.Empty() {
-		result = append(result, c.Car())
-
-		next := c.Cdr()
-		if next == nil {
-			break
-		}
-
-		nextCons, ok := next.(interfaces.Cons)
-		if !ok {
-			return nil, fmt.Errorf("invalid list: must be nil terminated")
-		}
-		c = nextCons
-	}
-
-	return result, nil
 }

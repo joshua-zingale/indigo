@@ -6,18 +6,24 @@ type Cons interface {
 	Empty() bool
 }
 
+type List interface {
+	Cons
+	IsList()
+}
+
 type IndigoReader interface {
 	// Returns the next-parsed object
 	Read() (any, error)
 }
 
 type IndigoEvaluator interface {
+	// Evaluates an object, producing a new one
 	Eval(any, NameSpace) (any, error)
 }
 
 type IndigoFunction interface {
 	// Calls the function with the passed in arguments.
-	Call(IndigoEvaluator, NameSpace, []any) (any, error)
+	Call(IndigoEvaluator, NameSpace, List) (any, error)
 }
 
 type Symbol string

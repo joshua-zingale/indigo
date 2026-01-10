@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/joshua-zingale/indigo/indigo/interfaces"
+	"github.com/joshua-zingale/indigo/indigo/internal"
 )
 
 type StandardReader struct {
@@ -97,13 +98,13 @@ func (sr *StandardReader) readInteger() (int, error) {
 	return int(integer), nil
 }
 
-func (sr *StandardReader) readList() (interfaces.Cons, error) {
+func (sr *StandardReader) readList() (interfaces.List, error) {
 	err := sr.Next()
 	if err != nil {
 		panic(err)
 	}
 
-	var elements List
+	var elements internal.List
 
 	for sr.curr.kind != RParen {
 		value, err := sr.Read()

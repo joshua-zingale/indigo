@@ -1,4 +1,4 @@
-package reading
+package internal
 
 type List []any
 
@@ -13,3 +13,5 @@ func (l List) Cdr() any {
 func (l List) Empty() bool {
 	return len(l) == 0
 }
+
+func (l List) IsList() {}
