@@ -3,7 +3,7 @@ package indigo
 import (
 	"github.com/joshua-zingale/indigo/indigo/interfaces"
 	"github.com/joshua-zingale/indigo/indigo/internal"
-	"github.com/joshua-zingale/indigo/indigo/reading"
+	"github.com/joshua-zingale/indigo/indigo/standard/reading"
 )
 
 func Read(source string) (any, error) {

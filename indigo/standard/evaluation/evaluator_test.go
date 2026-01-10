@@ -3,9 +3,10 @@ package evaluation
 import (
 	"testing"
 
+	"github.com/joshua-zingale/indigo/indigo/functions"
 	"github.com/joshua-zingale/indigo/indigo/interfaces"
 	"github.com/joshua-zingale/indigo/indigo/internal"
-	"github.com/joshua-zingale/indigo/indigo/reading"
+	"github.com/joshua-zingale/indigo/indigo/standard/reading"
 )
 
 func TestStandardEvaluator(t *testing.T) {
@@ -22,13 +23,13 @@ func TestStandardEvaluator(t *testing.T) {
 
 	evaluator := NewStandardEvaluator()
 	namespace := internal.NewNameSpace()
-	namespace.Set(interfaces.Symbol("+"), NewTypeCheckedIndigoFunctionFromGo(func(a float64, b float64) (float64, error) {
+	namespace.Set(interfaces.Symbol("+"), functions.NewTypeCheckedIndigoFunctionFromGo(func(a float64, b float64) (float64, error) {
 		return a + b, nil
 	}))
-	namespace.Set(interfaces.Symbol("*"), NewTypeCheckedIndigoFunctionFromGo(func(a float64, b float64) (float64, error) {
+	namespace.Set(interfaces.Symbol("*"), functions.NewTypeCheckedIndigoFunctionFromGo(func(a float64, b float64) (float64, error) {
 		return a * b, nil
 	}))
-	namespace.Set(interfaces.Symbol("if"), NewIndigoFunctionFromGo(func(evaluator interfaces.IndigoEvaluator, namespace interfaces.NameSpace, args interfaces.List) (any, error) {
+	namespace.Set(interfaces.Symbol("if"), functions.NewIndigoFunctionFromGo(func(evaluator interfaces.IndigoEvaluator, namespace interfaces.NameSpace, args interfaces.List) (any, error) {
 		argSlice := internal.ListToSlice(args)
 		if len(argSlice) != 3 {
 			panic("invalid num args for if")
