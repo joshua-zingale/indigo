@@ -118,5 +118,7 @@ func (sr *StandardReader) readList() (interfaces.List, error) {
 		elements = append(elements, value)
 	}
 
+	sr.Next()
+
 	return elements, nil
 }
