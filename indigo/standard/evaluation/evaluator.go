@@ -12,24 +12,31 @@ func NewStandardEvaluator() interfaces.IndigoEvaluator {
 	return &StandardEvaluator{}
 }
 
-func (se *StandardEvaluator) Eval(expression any, namespace interfaces.NameSpace) (any, error) {
-	return se.evalInNamespace(expression, namespace)
+func (se *StandardEvaluator) Eval(object any, namespace interfaces.NameSpace) (any, error) {
+	return se.evalInNamespace(object, namespace)
 }
 
-func (se *StandardEvaluator) evalInNamespace(expression any, namespace interfaces.NameSpace) (any, error) {
-	switch typedExpression := expression.(type) {
+func NewNameSpacedEval(namespace interfaces.NameSpace) func(any) (any, error) {
+	evaluator := NewStandardEvaluator()
+	return func(a any) (any, error) {
+		return evaluator.Eval(a, namespace)
+	}
+}
+
+func (se *StandardEvaluator) evalInNamespace(object any, namespace interfaces.NameSpace) (any, error) {
+	switch typedObject := object.(type) {
 	case interfaces.Symbol:
-		if value, ok := namespace.Get(typedExpression); ok {
+		if value, ok := namespace.Get(typedObject); ok {
 			return value, nil
 		}
-		return nil, interfaces.UndefinedSymbolError(typedExpression)
+		return nil, interfaces.UndefinedSymbolError(typedObject)
 	case interfaces.Cons:
-		if list, ok := typedExpression.(interfaces.List); ok {
+		if list, ok := typedObject.(interfaces.List); ok {
 			return se.evalList(list, namespace)
 		}
-		return typedExpression, nil
+		return typedObject, nil
 	default:
-		return typedExpression, nil
+		return typedObject, nil
 	}
 }
 
@@ -52,10 +59,10 @@ func (se *StandardEvaluator) evalList(list interfaces.List, namespace interfaces
 		return nil, interfaces.ExpectedButFoundTypeError("function", value)
 	}
 
-	expressionValue, err := function.Call(se, namespace, list.Cdr().(interfaces.List))
+	objectValue, err := function.Call(se, namespace, list.Cdr().(interfaces.List))
 	if err != nil {
 		return nil, err
 	}
 
-	return expressionValue, nil
+	return objectValue, nil
 }

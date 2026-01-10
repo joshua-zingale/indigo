@@ -26,6 +26,11 @@ type IndigoFunction interface {
 	Call(IndigoEvaluator, NameSpace, List) (any, error)
 }
 
+type IndigoModule interface {
+	NameSpace
+	Name() string
+}
+
 type Symbol string
 
 type NameSpace interface {
@@ -41,4 +46,7 @@ type NameSpace interface {
 
 	// Sets a Symbol's value in this NameSpace
 	Set(symbol Symbol, value any)
+
+	// The symbols available in this NameSpace
+	Symbols() []Symbol
 }

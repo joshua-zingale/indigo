@@ -14,6 +14,14 @@ func NewNameSpace() interfaces.NameSpace {
 	}
 }
 
+func NewNameSpaceFromMap(namespaceMap map[string]any) interfaces.NameSpace {
+	namespace := NewNameSpace()
+	for key, value := range namespaceMap {
+		namespace.Set(interfaces.Symbol(key), value)
+	}
+	return namespace
+}
+
 func (ns *NameSpace) NewChild() interfaces.NameSpace {
 	return &NameSpace{parent: ns, namespace: make(map[interfaces.Symbol]any)}
 }
@@ -32,4 +40,21 @@ func (ns *NameSpace) Get(symbol interfaces.Symbol) (any, bool) {
 
 func (ns *NameSpace) Set(symbol interfaces.Symbol, value any) {
 	ns.namespace[symbol] = value
+}
+
+func (ns *NameSpace) Symbols() []interfaces.Symbol {
+	var symbols []interfaces.Symbol
+
+	curr_namespace := ns
+	for curr_namespace != nil {
+		keys := make([]interfaces.Symbol, 0, len(ns.namespace))
+		for s := range ns.namespace {
+			keys = append(keys, s)
+		}
+		symbols = append(symbols, keys...)
+
+		curr_namespace = ns.parent
+	}
+
+	return symbols
 }
